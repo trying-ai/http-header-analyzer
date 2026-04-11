@@ -23,8 +23,17 @@ def analyze_headers(url):
     try:
         response = requests.get(normalized_url, timeout=10, allow_redirects=True)
     except requests.exceptions.RequestException as exc:
-        print(f"Error making request: {exc}")
-        sys.exit(1)
+        if normalized_url.startswith('https://'):
+            fallback_url = 'http://' + normalized_url.removeprefix('https://')
+            try:
+                print(f"[WARN] HTTPS request failed, retrying with HTTP: {fallback_url}")
+                response = requests.get(fallback_url, timeout=10, allow_redirects=True)
+            except requests.exceptions.RequestException as fallback_exc:
+                print(f"Error making request: {fallback_exc}")
+                sys.exit(1)
+        else:
+            print(f"Error making request: {exc}")
+            sys.exit(1)
 
     headers = response.headers
 
